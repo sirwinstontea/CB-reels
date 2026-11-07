@@ -11,7 +11,7 @@ from scipy import ndimage as ndi
 
 TIP_SOFT = 0.45
 UNDER_LINE_PX = 2
-FILL_ALPHA = 0.92
+FILL_ALPHA = 0.98
 GEL_OPACITY = 0.93
 GEL = np.array([0.985, 0.985, 0.975], np.float32)
 PAPER = np.array([250, 248, 243], np.float32) / 255.0

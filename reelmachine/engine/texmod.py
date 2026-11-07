@@ -42,7 +42,7 @@ def apply(result_path, plate_path, inkmask_path, out_path, blur_sigma=3.0, stren
     return apply_refs(plate_path, inkmask_path, out_path, strength=strength)
 
 
-def apply_refs(plate_path, inkmask_path, out_path, tex_root=None, strength=0.08, edge=0.06):
+def apply_refs(plate_path, inkmask_path, out_path, tex_root=None, strength=0.06, edge=0.12):
     """Multiply ref grain onto ink; darken slightly near ink edges (alcohol fringe)."""
     info = probe(plate_path)
     W, H = int(info["w"]), int(info["h"])
@@ -66,7 +66,8 @@ def apply_refs(plate_path, inkmask_path, out_path, tex_root=None, strength=0.08,
         # edge fringe: darker near boundary of ink
         edge_m = cv2.GaussianBlur(w, (0, 0), 2.5) - w
         edge_m = np.clip(edge_m, 0, 1)
-        mod = 1.0 + strength * grain - edge * edge_m
+        layer = np.clip(w * w, 0, 1)  # denser where fill is solid (overlap feel)
+        mod = 1.0 + strength * grain - edge * edge_m - 0.04 * layer
         textured = np.clip(p * mod[..., None], 0, 255)
         out = textured * w[..., None] + p * (1.0 - w[..., None])
         # hard burn black lines from plate (lines are darkest pixels)
