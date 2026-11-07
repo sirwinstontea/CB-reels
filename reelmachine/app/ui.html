@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coloring Reel Machine</title>
+<style>
+:root {
+  --bg: #F6F3EE; --card: #FFFFFF; --ink: #23201C; --muted: #77716A; --line: #E4DED5;
+  --wait: #C9C2B8; --run: #2F6FDB; --ok: #2E8B57; --retry: #D08A12; --fail: #C8402F;
+  --accent: #B5562F; --chip: #F0EBE3;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1B1A18; --card: #252320; --ink: #EDE8E1; --muted: #A39C93; --line: #3A3631;
+          --wait: #5A544D; --run: #6E9CF0; --ok: #57B884; --retry: #E5A73C; --fail: #E2705F;
+          --accent: #E08A5F; --chip: #312E2A; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+h1 { font-size: 17px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+h1 span { color: var(--accent); }
+button { font: inherit; color: inherit; background: var(--chip); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+main { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 16px 20px; }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+#drop { border: 2px dashed var(--line); border-radius: 12px; padding: 26px 14px; text-align: center; color: var(--muted); transition: .15s; }
+#drop.over { border-color: var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+#drop b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 4px; }
+.jobs { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.job { padding: 9px 10px; border-radius: 9px; border: 1px solid transparent; cursor: pointer; }
+.job:hover { background: var(--chip); }
+.job.sel { border-color: var(--line); background: var(--chip); }
+.job .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.job .s { color: var(--muted); font-size: 12px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--wait); }
+.st-running .dot, .dot.running { background: var(--run); }
+.dot.passed { background: var(--ok); } .dot.failed { background: var(--fail); } .dot.retrying { background: var(--retry); }
+.title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.title h2 { margin: 0; font-size: 16px; }
+.title .cost { color: var(--muted); }
+.flow { position: relative; margin: 0; padding: 0; list-style: none; }
+.stage { position: relative; display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; padding: 8px 0 14px; }
+.stage::before { content: ""; position: absolute; left: 14px; top: 30px; bottom: -6px; width: 2px; background: var(--line); }
+.stage:last-child::before { display: none; }
+.node { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--wait); background: var(--card); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--muted); z-index: 1; }
+.stage.passed .node { border-color: var(--ok); background: var(--ok); color: #fff; }
+.stage.running .node { border-color: var(--run); color: var(--run); animation: pulse 1.4s infinite; }
+.stage.retrying .node { border-color: var(--retry); color: var(--retry); animation: pulse 1.4s infinite; }
+.stage.failed .node { border-color: var(--fail); background: var(--fail); color: #fff; }
+.stage.skipped .node { border-style: dashed; }
+.stage.passed::before { background: var(--ok); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, currentColor 18%, transparent); } }
+.lbl { font-weight: 600; }
+.msg { color: var(--muted); font-size: 12.5px; min-height: 18px; word-break: break-word; }
+.stage.failed .msg { color: var(--fail); }
+.where { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: var(--chip); color: var(--muted); align-self: start; white-space: nowrap; }
+.where.Higgsfield { color: #7a4fd0; } .where.Claude { color: var(--accent); }
+.bar { height: 4px; border-radius: 4px; background: var(--line); margin-top: 6px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--run); width: 0; transition: width .4s; }
+.empty { color: var(--muted); text-align: center; padding: 50px 10px; }
+.done { margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; }
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--ink); width: min(520px, calc(100vw - 32px)); padding: 18px; }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog h3 { margin: 0 0 10px; font-size: 15px; }
+label { display: block; margin: 10px 0 4px; font-size: 12.5px; color: var(--muted); }
+input[type=text], input[type=password], input[type=number] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; }
+.row { display: flex; gap: 10px; } .row > div { flex: 1; }
+.keyline { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.ok { color: var(--ok); } .no { color: var(--fail); }
+.note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Coloring <span>Reel</span> Machine</h1>
+  <button id="settingsBtn">Settings &amp; keys</button>
+</header>
+<main>
+  <section>
+    <div class="card">
+      <div id="drop"><b>Drop coloring pages here</b>PNG or JPG, one reel each<br><br><button class="primary" id="pick">Choose pages…</button></div>
+      <div class="jobs" id="jobs"></div>
+    </div>
+  </section>
+  <section class="card" id="detail"><div class="empty">Drop a page to start. Each stage lights up here as it runs.</div></section>
+</main>
+
+<dialog id="settings">
+  <h3>Keys</h3>
+  <div class="keyline"><span>Higgsfield <span id="hfS"></span></span></div>
+  <input type="password" id="hfKey" placeholder="KEY_ID:KEY_SECRET" autocomplete="off">
+  <div class="keyline"><span>Anthropic, for the judge (optional) <span id="anS"></span></span></div>
+  <input type="password" id="anKey" placeholder="sk-ant-…" autocomplete="off">
+  <div class="note">Keys are stored in Windows Credential Manager, never in a file. Leave a box empty to keep the saved key.</div>
+  <h3 style="margin-top:18px">Budget</h3>
+  <div class="row">
+    <div><label>Max per reel ($)</label><input type="number" id="bReel" step="0.5" min="0"></div>
+    <div><label>Max per day ($)</label><input type="number" id="bDay" step="1" min="0"></div>
+  </div>
+  <label>Higgsfield hand Element ids (comma separated, optional)</label>
+  <input type="text" id="elements" placeholder="made once in the Higgsfield web app">
+  <label><input type="checkbox" id="judge"> Use the judge (a few cents per reel)</label>
+  <div class="note" id="saveMsg"></div>
+  <div class="actions"><button id="close">Close</button><button class="primary" id="save">Save</button></div>
+</dialog>
+
+<script>
+let sel = null, snap = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function jobStatus(j) {
+  if (j.error) return ["failed", j.error];
+  if (j.out) return ["passed", "Reel ready"];
+  if (!j.state) return ["waiting", "in the queue"];
+  const st = Object.values(j.state.stages);
+  const cur = st.find(s => s.status === "running" || s.status === "retrying");
+  return cur ? ["running", cur.label] : ["running", "starting"];
+}
+
+function render() {
+  if (!snap) return;
+  const jobs = snap.jobs.slice().reverse();
+  if (!sel && jobs.length) sel = jobs[0].id;
+  $("jobs").innerHTML = jobs.map(j => {
+    const [s, m] = jobStatus(j);
+    return `<div class="job ${j.id === sel ? "sel" : ""}" data-id="${esc(j.id)}"><div class="n"><span class="dot ${s}"></span>${esc(j.id)}</div><div class="s">${esc(m)}</div></div>`;
+  }).join("");
+  document.querySelectorAll(".job").forEach(el => el.onclick = () => { sel = el.dataset.id; render(); });
+  const j = snap.jobs.find(x => x.id === sel);
+  if (!j) return;
+  const stages = j.state ? j.state.stages : {};
+  const items = snap.stages.map((s, i) => {
+    const st = stages[s.key] || {status: "waiting", msg: "", progress: 0};
+    const bar = (st.status === "running" || st.status === "retrying") && st.progress > 0
+      ? `<div class="bar"><i style="width:${Math.round(st.progress * 100)}%"></i></div>` : "";
+    const mark = st.status === "passed" ? "✓" : st.status === "failed" ? "!" : i + 1;
+    return `<li class="stage ${st.status}"><div class="node">${mark}</div><div><div class="lbl">${esc(s.label)}</div><div class="msg">${esc(st.msg)}</div>${bar}</div><span class="where ${s.where.replace(/ /g, "")}">${esc(s.where)}</span></li>`;
+  }).join("");
+  const cost = j.state ? `$${(j.state.usd || 0).toFixed(2)} spent` : "";
+  const done = j.out ? `<div class="done"><button class="primary" onclick='pywebview.api.open_file(${JSON.stringify(j.out)})'>Play reel</button><button onclick='pywebview.api.open_path(${JSON.stringify(j.out)})'>Show in folder</button></div>` : "";
+  const err = j.error ? `<div class="msg" style="color:var(--fail);margin-bottom:8px">${esc(j.error)}</div>` : "";
+  $("detail").innerHTML = `<div class="title"><h2>${esc(j.id)}</h2><span class="cost">${cost}</span></div>${err}<ul class="flow">${items}</ul>${done}`;
+}
+
+async function poll() {
+  try { snap = await pywebview.api.snapshot(); render(); } catch (e) {}
+  setTimeout(poll, 700);
+}
+
+async function openSettings() {
+  const s = await pywebview.api.settings(), k = await pywebview.api.key_status();
+  $("bReel").value = s.budget_reel_usd; $("bDay").value = s.budget_day_usd;
+  $("elements").value = (s.elements || []).join(", "); $("judge").checked = !!s.use_judge;
+  $("hfS").innerHTML = k.higgsfield ? '<span class="ok">· saved</span>' : '<span class="no">· not set</span>';
+  $("anS").innerHTML = k.anthropic ? '<span class="ok">· saved</span>' : '<span class="no">· not set</span>';
+  $("hfKey").value = ""; $("anKey").value = ""; $("saveMsg").textContent = "";
+  $("settings").showModal();
+}
+
+async function saveSettings() {
+  const msgs = [];
+  for (const [which, id] of [["higgsfield", "hfKey"], ["anthropic", "anKey"]]) {
+    const v = $(id).value.trim();
+    if (v) { const r = await pywebview.api.save_key(which, v); msgs.push(`${which}: ${r.msg}`); $(id).value = ""; }
+  }
+  await pywebview.api.save_settings({budget_reel_usd: $("bReel").value, budget_day_usd: $("bDay").value,
+    elements: $("elements").value, use_judge: $("judge").checked});
+  msgs.push("Settings saved");
+  $("saveMsg").textContent = msgs.join(" · ");
+  const k = await pywebview.api.key_status();
+  $("hfS").innerHTML = k.higgsfield ? '<span class="ok">· saved</span>' : '<span class="no">· not set</span>';
+  $("anS").innerHTML = k.anthropic ? '<span class="ok">· saved</span>' : '<span class="no">· not set</span>';
+}
+
+window.addEventListener("pywebviewready", () => {
+  poll();
+  $("pick").onclick = () => pywebview.api.pick_pages();
+  $("settingsBtn").onclick = openSettings;
+  $("close").onclick = () => $("settings").close();
+  $("save").onclick = saveSettings;
+});
+const drop = $("drop");
+["dragenter", "dragover"].forEach(ev => document.addEventListener(ev, () => drop.classList.add("over")));
+["dragleave", "drop"].forEach(ev => document.addEventListener(ev, () => drop.classList.remove("over")));
+</script>
+</body>
+</html>

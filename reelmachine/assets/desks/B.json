@@ -1,0 +1,29 @@
+{
+ "corners": [
+  [
+   570,
+   997
+  ],
+  [
+   1730,
+   1181
+  ],
+  [
+   1589,
+   1980
+  ],
+  [
+   166,
+   1681
+  ]
+ ],
+ "sheet_mm": [
+  279,
+  216
+ ],
+ "pen_dir": [
+  0.5,
+  0.87
+ ],
+ "source": "Screenshot 2026-10-26 001150 upscaled x2.5; TL corner (in shadow) placed by hand"
+}

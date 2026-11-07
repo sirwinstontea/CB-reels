@@ -1,0 +1,10 @@
+{
+ "budget_reel_usd": 1.5,
+ "budget_day_usd": 4.9,
+ "use_judge": true,
+ "models": ["kling-omni-edit", "kling-omni-edit"],
+ "elements": [],
+ "resolution": "720p",
+ "model_zooms": ["close", "medium"],
+ "max_paid_shots": 4
+}
