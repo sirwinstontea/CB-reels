@@ -271,12 +271,10 @@ def lock_ink(result_path, plate_path, inkmask_path, out_path=None):
         fails.append(f"page changed outside ink in {bad.sum()} of {n} frames")
         rep["ok"] = False
         rep["fails"] = fails
-    if tmp:
-        if rep["ok"] and tmp.exists():
-            os.replace(tmp, out_path)
-            rep["repaired"] = str(out_path)
-        elif tmp.exists():
-            tmp.unlink()
+    # always keep the mask composite: plate outside ink, model inside (even if spot fails)
+    if tmp and tmp.exists():
+        os.replace(tmp, out_path)
+        rep["repaired"] = str(out_path)
     return rep
 
 if __name__ == "__main__":
