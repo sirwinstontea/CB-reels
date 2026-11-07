@@ -37,11 +37,18 @@ def main():
     print("1/3 texture edit on plate…", flush=True)
     cid = f"{SID}.texture"
     st = pipeline._clip_state(job, cid)
+    # failed Omni jobs keep old image_urls in the log; never reuse those
+    if st.get("status") in ("failed", "nsfw", "canceled"):
+        for k in ("images", "request_id", "status_url", "path", "idempotency_key"):
+            st.pop(k, None)
+        cid = f"{SID}.texture.r2"
+        st = pipeline._clip_state(job, cid)
     t0 = time.time()
     if st.get("path") and Path(st["path"]).exists():
         tres = Path(st["path"])
         print("  resume", tres)
     else:
+        print("  refs", [r.name for r in refs], flush=True)
         tres = cour.run(job.name, cid, model, str(plate), refs,
                         texture.prompt(meds, want_blend=want_blend), [], s["resolution"], st)
     print("  texture", tres, "in", round(time.time() - t0), "s", flush=True)
