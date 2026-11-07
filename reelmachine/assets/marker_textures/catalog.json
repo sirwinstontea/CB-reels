@@ -1,0 +1,17 @@
+{
+  "alcohol": {
+    "label": "alcohol marker",
+    "description": "Translucent dye ink on paper: soft feathered edges, paper grain/mottle, darker overlaps, wet-edge fringe. Matte when dry.",
+    "refs": [
+      "stroke_grain_and_layer.png",
+      "stroke_filling.png",
+      "fill_mottle.png",
+      "stroke_streaks.png",
+      "from_video_fill.jpg"
+    ],
+    "blend_refs": [
+      "blend_two_colors.png",
+      "from_video_blend.jpg"
+    ]
+  }
+}
