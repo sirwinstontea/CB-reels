@@ -39,7 +39,11 @@ def refs_for(mediums: list[str], root: Path | None = None, want_blend: bool = Fa
         if want_blend:
             names += list(info.get("blend_refs") or [])
         for name in names:
-            p = folder / name
+            # prefer 9:16 api/ stills (Omni rejects odd aspect ratios)
+            stem = Path(name).stem
+            p = folder / "api" / f"{stem}.jpg"
+            if not p.exists():
+                p = folder / name
             if p.exists() and str(p) not in seen:
                 seen.add(str(p))
                 out.append(p)
