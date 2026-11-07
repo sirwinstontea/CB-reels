@@ -13,6 +13,7 @@ STAGES = [
     ("strokes", "Plan strokes"),
     ("ink", "Color the digital paper"),
     ("rough", "Make rough clips"),
+    ("texture", "Marker texture (Higgs)"),
     ("courier", "Send to Higgsfield"),
     ("spot", "Spot the difference"),
     ("judge", "The judge"),
@@ -54,6 +55,9 @@ class Job:
         return [json.loads(l) for l in self.log_path.read_text(encoding="utf-8").splitlines() if l.strip()]
 
     def set(self, stage, status=None, msg=None, progress=None):
+        if stage not in self.state["stages"]:
+            label = dict(STAGES).get(stage, stage)
+            self.state["stages"][stage] = {"label": label, "status": "waiting", "msg": "", "progress": 0.0}
         s = self.state["stages"][stage]
         if status:
             assert status in STATUSES
