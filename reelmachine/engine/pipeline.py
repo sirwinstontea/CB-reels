@@ -254,42 +254,19 @@ def run(page_path, settings=None, name=None, on_update=None):
         ledger = Ledger(Path(s["jobs_dir"]) / "ledger.json", s["budget_reel_usd"], s["budget_day_usd"])
         courier = None if dry else Courier(ledger, job.log, key=key)
 
-        # 5b. mask-locked ink texture on plates (then rebuild rough for hand shots).
-        if s.get("apply_ink_texture") and not dry and courier is not None:
+        # 5b. ref-driven ink texture (local; Omni residual leaked ghosts — do not use for texture).
+        if s.get("apply_ink_texture"):
             stage = "texture"
-            upd(stage, "running", "Higgs texture on ink masks")
-            tex_root = Path(s.get("marker_textures") or (ROOT / "assets" / "marker_textures"))
+            upd(stage, "running", "ref grain on ink masks")
             for i, x in enumerate(shots):
                 plate_p = clips / f"{x.id}.plate.mp4"
                 ink_p = clips / f"{x.id}.inkmask.npz"
                 if not plate_p.exists() or not ink_p.exists():
                     continue
-                meta = json.loads((clips / f"{x.id}.json").read_text())
-                idxs = list(meta.get("markers") or [])
-                if not idxs:
-                    idxs = sorted({int(tl.marker[j]) for j in range(len(tl.t))
-                                   if tl.down[j] and x.t0 <= float(tl.t[j]) < x.t1})
-                meds = texture.shot_mediums(markers, idxs)
-                want_blend = len(set(idxs)) > 1
-                refs = texture.refs_for(meds, tex_root, want_blend=want_blend)
-                if not refs:
-                    job.log({"clip": x.id, "step": "texture_skip", "msg": "no texture refs"})
-                    continue
-                cid = f"{x.id}.texture"
-                st = _clip_state(job, cid)
-                have = st.get("path") and Path(st["path"]).exists()
-                upd(stage, "running", f"texture {i + 1}/{len(shots)}", i / max(1, len(shots)))
-                try:
-                    res = Path(st["path"]) if have else courier.run(
-                        job.name, cid, s.get("texture_model") or "kling-omni-edit",
-                        f"{x.id}.plate.mp4", refs, texture.prompt(meds, want_blend=want_blend),
-                        [], s["resolution"], st)
-                except (BudgetExceeded, CourierError) as e:
-                    job.log({"clip": cid, "step": "texture_error", "msg": str(e)})
-                    continue
-                rep = texmod.apply(res, plate_p, ink_p, clips / f"{x.id}.plate.tex.mp4")
-                (clips / f"{cid}.spot.json").write_text(json.dumps(rep, indent=1))
-                job.log({"clip": cid, "step": "texture_mod", "ok": rep.get("ok"), "outside_mae": rep.get("outside_mae")})
+                tex_out = clips / f"{x.id}.plate.tex.mp4"
+                rep = texmod.apply_refs(plate_p, ink_p, tex_out,
+                                        tex_root=Path(s.get("marker_textures") or (ROOT / "assets" / "marker_textures")) / "alcohol")
+                job.log({"clip": x.id, "step": "texture_mod", **{k: rep.get(k) for k in ("ok", "outside_mae", "mode")}})
                 if rep.get("repaired"):
                     flat = clips / f"{x.id}.plate.flat.mp4"
                     if not flat.exists():
@@ -300,9 +277,8 @@ def run(page_path, settings=None, name=None, on_update=None):
                     if x.hand:
                         _rebuild_rough_from_plate(plate_p, clips / f"{x.id}.json", markers,
                                                   clips / f"{x.id}.rough.mp4")
-            upd(stage, "passed", progress=1)
-        elif s.get("apply_ink_texture"):
-            upd("texture", "skipped", "draft / no Higgsfield key")
+            upd(stage, "passed", "local ref texture", 1)
+
         use_judge = s["use_judge"] and judge.available() and not dry
         if not use_judge:
             upd("judge", "skipped", "no Anthropic key" if s["use_judge"] and not dry else "off")

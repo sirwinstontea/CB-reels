@@ -161,6 +161,9 @@ class InkCanvas:
         a = self.a[sl][..., None]
         rgb = rgb * (1 - a) + self.rgb[sl] * a
         rgb *= lines
+        # hard burn: never lighten outline pixels
+        dark = self.page.lines[sl] < 0.2
+        rgb[dark] = 0
         if self.gel is not None:
             g = self.gel[sl].astype(np.float32)
             if g.any():
