@@ -13,6 +13,9 @@ from engine import courier as C
 from engine.job import Job
 
 PAGE = r"C:\Users\truet\Claude Projects\Coloring Reel Machine\workbench\test_page_bubble_bath.png"
+USAGE = "usage: python pilot.py draft|shot|full NAME [shot_id] [model]"
+if len(sys.argv) < 3:
+    raise SystemExit(USAGE)
 mode, name = sys.argv[1], sys.argv[2]
 s = pipeline.load_settings()
 
@@ -40,6 +43,8 @@ if mode == "draft":
     out = pipeline.run(PAGE, s, name=name, on_update=on_update)
     print("DRAFT:", out)
 elif mode == "shot":
+    if len(sys.argv) < 4:
+        raise SystemExit(USAGE + "  (shot mode needs shot_id, e.g. s01)")
     sid = sys.argv[3]
     model = sys.argv[4] if len(sys.argv) > 4 else s["models"][0]
     job = Job(s["jobs_dir"], name)
