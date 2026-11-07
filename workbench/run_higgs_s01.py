@@ -42,7 +42,7 @@ def main():
         tres = Path(st["path"])
         print("  resume", tres)
     else:
-        tres = cour.run(job.name, cid, model, f"{SID}.plate.mp4", refs,
+        tres = cour.run(job.name, cid, model, str(plate), refs,
                         texture.prompt(meds, want_blend=want_blend), [], s["resolution"], st)
     print("  texture", tres, "in", round(time.time() - t0), "s", flush=True)
     trep = spot.lock_ink(tres, plate, ink_p, out_path=clips / f"{SID}.plate.tex.mp4")
@@ -70,7 +70,7 @@ def main():
     if hst.get("path") and Path(hst["path"]).exists():
         hres = Path(hst["path"])
     else:
-        hres = cour.run(job.name, hcid, hmodel, f"{SID}.rough.mp4", shot_refs,
+        hres = cour.run(job.name, hcid, hmodel, str(rough), shot_refs,
                         pipeline.HAND_PROMPT.format(cap=cap), s["elements"], s["resolution"], hst)
     print("  hand", hres, "in", round(time.time() - t0), "s; spent", ledger.spent(job.name), flush=True)
     hrep = spot.check(hres, plate, clips / f"{SID}.masks.npz", out_path=clips / f"{hcid}.fixed.mp4")
