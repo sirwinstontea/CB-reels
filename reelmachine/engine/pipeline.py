@@ -19,7 +19,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from . import colorai, colors, handref, director, editor, final, ink, judge, rough, scene, shading, sound, spot, strokes, texture
+from . import colorai, colors, handref, director, editor, final, ink, judge, rough, scene, shading, sound, spot, strokes, texture, texmod
 from . import page as pagemod
 from .courier import Courier, CourierError, BudgetExceeded, Ledger, get_key, price, cost_report
 from .job import Job
@@ -287,10 +287,10 @@ def run(page_path, settings=None, name=None, on_update=None):
                 except (BudgetExceeded, CourierError) as e:
                     job.log({"clip": cid, "step": "texture_error", "msg": str(e)})
                     continue
-                rep = spot.lock_ink(res, plate_p, ink_p, out_path=clips / f"{x.id}.plate.tex.mp4")
+                rep = texmod.apply(res, plate_p, ink_p, clips / f"{x.id}.plate.tex.mp4")
                 (clips / f"{cid}.spot.json").write_text(json.dumps(rep, indent=1))
-                job.log({"clip": cid, "step": "texture_spot", "ok": rep.get("ok"), "fails": rep.get("fails")})
-                if rep.get("ok") and rep.get("repaired"):
+                job.log({"clip": cid, "step": "texture_mod", "ok": rep.get("ok"), "outside_mae": rep.get("outside_mae")})
+                if rep.get("repaired"):
                     flat = clips / f"{x.id}.plate.flat.mp4"
                     if not flat.exists():
                         plate_p.replace(flat)

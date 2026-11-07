@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(r"C:\Users\truet\Claude Projects\Coloring Reel Machine\reelmachine")
 sys.path.insert(0, str(ROOT))
 
-from engine import colors, pipeline, spot, texture
+from engine import colors, pipeline, texmod, texture
 from engine import courier as C
 from engine.job import Job
 from engine.paths import HOME as RM
@@ -52,11 +52,11 @@ def main():
         tres = cour.run(job.name, cid, model, str(plate), refs,
                         texture.prompt(meds, want_blend=want_blend), [], s["resolution"], st)
     print("  texture", tres, "in", round(time.time() - t0), "s", flush=True)
-    trep = spot.lock_ink(tres, plate, ink_p, out_path=clips / f"{SID}.plate.tex.mp4")
-    (clips / f"{cid}.spot.json").write_text(json.dumps(trep, indent=1))
-    print("  lock_ink", {k: trep.get(k) for k in ("ok", "fails")}, flush=True)
-    if not trep.get("ok") or not trep.get("repaired"):
-        raise SystemExit("texture spot failed")
+    trep = texmod.apply(tres, plate, ink_p, clips / f"{SID}.plate.tex.mp4")
+    (clips / f"{cid}.texmod.json").write_text(json.dumps(trep, indent=1))
+    print("  texmod", {k: trep.get(k) for k in ("ok", "outside_mae")}, flush=True)
+    if not trep.get("repaired"):
+        raise SystemExit("texture modulate failed")
     flat = clips / f"{SID}.plate.flat.mp4"
     if not flat.exists():
         plate.replace(flat)
