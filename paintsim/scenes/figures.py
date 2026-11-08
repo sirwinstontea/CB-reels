@@ -85,13 +85,13 @@ def fig6_pollock(cfg: Config | None = None, seed=3):
 def fig7_flower(cfg: Config | None = None, petals=6):
     """Fig. 7: watercolour flower.  Binder paint petals (Table 1 row 2) are flooded with low-viscosity solvent
     (row 3) on absorbent paper: pigment diffuses into the solvent, the solvent is absorbed, the binder stays."""
-    cfg = cfg or base_config(d0=0.006, h=0.012)
+    cfg = cfg or base_config(d0=0.005, h=0.01)
     pig = [MAGENTA, YELLOW, GREEN]
     sim = Simulation(cfg, [FLOWER_BINDER, FLOWER_SOLVENT], pig)
     d0 = cfg.d0
     _paper(sim, -0.22, 0.22, -0.22, 0.22)
     # one global lattice for the paint layer (3 particles thick) so the petals cannot overlap
-    P = lattice_box((-0.2, -0.22, 0), (0.2, 0.2, 3 * d0), d0)
+    P = lattice_box((-0.2, -0.22, 0), (0.2, 0.2, 2 * d0), d0)
     xy = P[:, :2]
     center = np.linalg.norm(xy, axis=1) <= 0.025
     petal = np.zeros(len(P), bool)
@@ -114,7 +114,7 @@ def fig7_flower(cfg: Config | None = None, petals=6):
     for k in range(14):
         a = rng.uniform(0, 2 * math.pi); r = rng.uniform(0.03, 0.12)
         rad = rng.uniform(0.016, 0.024)
-        cpos = (r * math.cos(a), r * math.sin(a), 3 * d0 + rad + d0 + rng.uniform(0.0, 0.05))
+        cpos = (r * math.cos(a), r * math.sin(a), 2 * d0 + rad + d0 + rng.uniform(0.0, 0.05))
         drops.append(lattice_sphere(cpos, rad, d0))
     sim.add_particles(dedupe(sim.x, np.vstack(drops), d0), 1, [0, 0, 0])
     return sim, 2.5

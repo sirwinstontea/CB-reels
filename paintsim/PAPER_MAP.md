@@ -46,7 +46,8 @@ Every equation in the paper, where it lives in the code, and how it is tested.
    `sum c` exactly.
 4. **Eq. (5) uses only eps_i.** Since `sum_j m/rho_j grad W ~ 0` inside the fluid, the printed form only acts at free
    surfaces (`test_eq5_forms...`). `'difference'` (eps_j - eps_i, the same pattern as Eq. 4 and Eq. 7) and
-   `'symmetric'` are the standard SPH divergences. Default: `'literal'`.
+   `'symmetric'` are the standard SPH divergences. Default: `'literal'`. The thesis (T14) shows the eps_i-only form
+   is deliberate: it is copied from Chang et al. 2009 Eq. 12 (`research/you2013/FINDINGS.md`).
 5. **Eq. (3) has m^2.** That is the force; the code uses the acceleration (divide by m), consistent with Eq. 2.
 6. **Flower parameters.** The text says solvent omega_D = 0.038 and r_c = 2.5e-5; Table 1 says binder 0.038, solvent
    0.05, r_c = 2.5e-4. We follow Table 1. With Eq. 9 the 4 r_c term dominates, so the absorption speed barely depends on
@@ -64,7 +65,18 @@ Every equation in the paper, where it lives in the code, and how it is tested.
 | P_h | `rho0 g H`, H = liquid column above the particle (d0 x d0 columns) | `kernels.column_heights` |
 | contact angle theta | 0 (fully wetting) | `Liquid.theta` |
 | mu in Eq. 9 | the liquid's mu_v | `kernels.absorption` |
+| absorbed particles | kept as frozen particles below the paper plane at depth l (thesis Fig. 5.4), flagged `absorbed`, excluded from the surface | `solver.step` |
 | pigment left on paper | all of an absorbed particle's pigment (`deposit_fraction = 1`), spread over the touching paper particles; plus a contact stain where liquid touches paper | `kernels.deposit`, `kernels.contact_stain` |
-| Appendix A alpha, yield | Pollock alpha = 10 1/s, yield = 0.05 (our choice) | `params.POLLOCK_BINDER` |
+| Appendix A alpha, yield | alpha = 25, yield = 0.1 (Goktekin 2004 Fig. 2 values; no You source gives them) | `params.POLLOCK_BINDER` |
 | surface tension force | none (the paper has none; gamma only enters Eq. 10) | - |
 | renderer | mental ray in Maya -> own ray-marcher, plus OBJ export | `render.py` |
+
+## Evidence from the author's thesis (2014) and the paper's video
+
+See `research/you2013/FINDINGS.md`.
+- No absorption threshold, P_h or theta is published.
+- Solvent absorbing very fast is intended: "solvent absorbs very fast and leaves the pigment that diffused into it".
+- On-screen pools last because each rendered frame covers only about 11 ms of simulated time. Reproductions should be
+  played in slow motion: a high `--fps` in the sim, played back at 24 fps.
+- PCISPH ran a fixed 3 iterations. We use at least 3, plus an error tolerance.
+- The paper is a single layer of particles. We use 2 layers for boundary support.
