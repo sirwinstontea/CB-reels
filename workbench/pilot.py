@@ -40,6 +40,7 @@ if mode == "draft":
         raise C.CourierError("pilot: draft phase")
     pipeline.get_key = nokey
     pipeline.notify = lambda *a, **k: None
+    s = {**s, "apply_ink_texture": False}  # early-chat draft: sim plate/rough only, no texture pass
     out = pipeline.run(PAGE, s, name=name, on_update=on_update)
     print("DRAFT:", out)
 elif mode == "shot":
