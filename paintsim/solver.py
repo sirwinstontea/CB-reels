@@ -57,6 +57,10 @@ class Simulation:
         self.l = np.zeros(0)
         self.pid = np.zeros(0, np.int64)
         self._next_id = 0
+        # absorbed particles (kept below the paper plane, frozen)
+        self.ab_x = np.zeros((0, 3))
+        self.ab_c = np.zeros((0, self.K))
+        self.ab_lid = np.zeros(0, np.int32)
         # boundary (paper + walls)
         self.bx = np.zeros((0, 3))
         self.bpaper = np.zeros(0, np.bool_)
@@ -268,6 +272,12 @@ class Simulation:
                           self.cp6, self.paper_area, cfg.deposit_fraction, self.paper_c)
                 self.stats["deposited"] += self.paper_c.sum(0) - before
                 self.stats["absorbed"] += int(idx.size)
+                # thesis Fig. 5.4: absorbed particles pass below the paper plane and stay there (not rendered as liquid)
+                xa = self.x[idx].copy()
+                xa[:, 2] = -self.l[idx]
+                self.ab_x = np.vstack([self.ab_x, xa])
+                self.ab_c = np.vstack([self.ab_c, self.c[idx]])
+                self.ab_lid = np.concatenate([self.ab_lid, self.lid[idx]])
                 self._remove(~absorbed)
                 bnbr, bcnt = bnbr[~absorbed], bcnt[~absorbed]
 
@@ -288,11 +298,15 @@ class Simulation:
     # ------------------------------------------------------------------ output
     def frame_dict(self):
         cfg = self.cfg
+        x = np.vstack([self.x, self.ab_x])
+        lid = np.concatenate([self.lid, self.ab_lid])
+        na = self.ab_x.shape[0]
         return dict(
-            x=self.x.astype(np.float32), v=self.v.astype(np.float32),
-            kind=self.kind_of[self.lid].astype(np.int8) if self.x.shape[0] else np.zeros(0, np.int8),
-            lid=self.lid.astype(np.int16), c=self.c.astype(np.float32),
-            absorbed=np.zeros(self.x.shape[0], np.bool_), pid=self.pid,
+            x=x.astype(np.float32), v=np.vstack([self.v, np.zeros((na, 3))]).astype(np.float32),
+            kind=self.kind_of[lid].astype(np.int8) if x.shape[0] else np.zeros(0, np.int8),
+            lid=lid.astype(np.int16), c=np.vstack([self.c, self.ab_c]).astype(np.float32),
+            absorbed=np.concatenate([np.zeros(self.x.shape[0], np.bool_), np.ones(na, np.bool_)]),
+            pid=np.concatenate([self.pid, np.full(na, -1, np.int64)]),
             paper_x=self.bx[self.bpaper].astype(np.float32), paper_c=self.paper_c[self.bpaper].astype(np.float32),
             paper_stain=self.paper_stain[self.bpaper].astype(np.float32),
             paper_touch=self.paper_touch[self.bpaper].astype(np.int8),

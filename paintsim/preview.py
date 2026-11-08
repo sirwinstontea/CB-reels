@@ -17,7 +17,10 @@ def _colors(f):
 
 
 def preview(npz, out, size=(520, 400), extent=None):
-    f = np.load(npz)
+    f = dict(np.load(npz))
+    if "absorbed" in f and f["absorbed"].any():
+        keep = ~f["absorbed"]
+        f["x"], f["c"] = f["x"][keep], f["c"][keep]
     x = f["x"]
     col = (_colors(f) * 255).astype(np.uint8)
     W, H = size

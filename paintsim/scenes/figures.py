@@ -43,41 +43,42 @@ def base_config(**kw):
 
 # ----------------------------------------------------------------------------------------------- Fig. 5
 def fig5(cfg: Config | None = None):
-    """Fig. 5: identical pours of viscoelastic (red), viscous (green) and basic (yellow) paint onto canvas."""
-    cfg = cfg or base_config()
+    """Fig. 5 / video 8-15 s: tubes squeeze viscoelastic (red), viscous (green) and basic (yellow) paint onto a plane."""
+    cfg = cfg or base_config(d0=0.006, h=0.012)
     sim = Simulation(cfg, [FIG5_VISCOELASTIC, FIG5_VISCOUS, FIG5_BASIC], [RED, GREEN, YELLOW])
-    _paper(sim, -0.45, 0.45, -0.2, 0.2)
-    for k, xo in enumerate((-0.25, 0.0, 0.25)):
+    _paper(sim, -0.36, 0.36, -0.15, 0.15)
+    for k, xo in enumerate((-0.2, 0.0, 0.2)):
         c = np.zeros(3)
         c[k] = 1.0
-        sim.emitters.append(Nozzle(k, c, lambda t, xo=xo: (xo, 0.0, 0.35), radius=0.016, speed=0.6,
-                                   t0=0.0, t1=1.2))
+        sim.emitters.append(Nozzle(k, c, lambda t, xo=xo: (xo, 0.0, 0.14), radius=0.012, speed=0.35,
+                                   t0=0.0, t1=1.6, seed=k))
     return sim, 3.0
 
 
 # ----------------------------------------------------------------------------------------------- Fig. 6
 def fig6_pollock(cfg: Config | None = None, seed=3):
     """Fig. 6: action painting.  Nozzles swing over the canvas dripping viscoelastic acrylic (Table 1 row 1)."""
-    cfg = cfg or base_config()
+    cfg = cfg or base_config(d0=0.006, h=0.012)
     pig = [BLACK, WHITE, YELLOW, TEAL]
     sim = Simulation(cfg, [POLLOCK_BINDER], pig)
     W, H = 0.9, 0.6
     _paper(sim, -W / 2, W / 2, -H / 2, H / 2)
     rng = np.random.default_rng(seed)
     t = 0.0
-    for k in range(9):
+    for k in range(7):
         pk = k % len(pig)
         c = np.zeros(len(pig)); c[pk] = 1.0
         a = rng.uniform(0.15, 0.32); b = rng.uniform(0.08, 0.2)
-        ph = rng.uniform(0, 2 * math.pi); wv = rng.uniform(2.5, 4.5) * rng.choice([-1, 1])
+        ph = rng.uniform(0, 2 * math.pi); wv = rng.uniform(1.0, 1.8) * rng.choice([-1, 1])
         cx, cy = rng.uniform(-0.12, 0.12), rng.uniform(-0.06, 0.06)
-        dur = rng.uniform(0.6, 1.0)
+        dur = rng.uniform(0.8, 1.2)
 
         def path(tt, a=a, b=b, ph=ph, wv=wv, cx=cx, cy=cy):
-            return (cx + a * math.cos(wv * tt + ph), cy + b * math.sin(1.7 * wv * tt + ph), 0.30)
-        sim.emitters.append(Nozzle(0, c, path, radius=rng.uniform(0.008, 0.013), speed=0.5, t0=t, t1=t + dur))
-        t += dur * 0.55
-    return sim, t + 2.0
+            return (cx + a * math.cos(wv * tt + ph), cy + b * math.sin(1.7 * wv * tt + ph), 0.25)
+        sim.emitters.append(Nozzle(0, c, path, radius=rng.uniform(0.007, 0.011), speed=0.6, t0=t, t1=t + dur,
+                                   seed=k))
+        t += dur * 0.6
+    return sim, t + 1.5
 
 
 # ----------------------------------------------------------------------------------------------- Fig. 7
@@ -139,7 +140,7 @@ def _casa_mask(scale=1):
 def fig8_casa(cfg: Config | None = None):
     """Fig. 8: the letters of 'CASA' (viscous paint, mu_v = 40) fall one after another into a solvent pool on
     absorbent paper (solvent r_c = 2.5e-4)."""
-    cfg = cfg or base_config()
+    cfg = cfg or base_config(dt=1e-3)
     pig = [RED, BLUE, YELLOW, GREEN]
     sim = Simulation(cfg, [CASA_BINDER, CASA_SOLVENT], pig)
     d0 = cfg.d0

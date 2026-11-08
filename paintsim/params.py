@@ -32,7 +32,7 @@ class Liquid:
 # "For the Jackson Pollock painting, we set r_c equal to zero, which means no absorption."
 # alpha / yield are not published; values here are ours (see PAPER_MAP.md, "Gaps").
 POLLOCK_BINDER = Liquid("pollock-binder", BINDER, mu_v=80.0, mu_e=1000.0, omega_D=0.001, r_c=0.0,
-                        gamma=0.028, alpha=10.0, yield_=0.05)
+                        gamma=0.028, alpha=25.0, yield_=0.1)  # alpha, yield: Goktekin 2004 Fig. 2 values
 
 # Flower (Fig. 7): binder + solvent rows of Table 1.
 # Note: the text says "The diffusivity weight of the solvent is 0.038" and "we set r_c equal to 2.5e-5";
