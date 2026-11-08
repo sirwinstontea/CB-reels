@@ -29,3 +29,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.bak-*
+
+# paintsim (You et al. 2013 rebuild): sim output, scratch, copyrighted paper + downloads
+paintsim/_runs/
+paintsim/_render_scratch/
+research/you2013/src/
+research/you2013/downloads/
