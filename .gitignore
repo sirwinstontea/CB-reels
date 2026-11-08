@@ -35,3 +35,12 @@ paintsim/_runs/
 paintsim/_render_scratch/
 research/you2013/src/
 research/you2013/downloads/
+
+# private / third-party material (repo is public)
+reference-videos/
+chat-export/
+workbench/matched_ref/
+test-run-prompt.md
+Coloring-Reel-Machine-v2.pdf
+reelmachine/p.out
+reelmachine/build_log.txt
